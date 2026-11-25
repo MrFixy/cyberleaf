@@ -1,0 +1,11 @@
+corn_blight
+corn_common_rust
+corn_gray_leaf_spot
+corn_healthy
+rice_brownspot
+rice_healthy
+rice_hispa
+rice_leafblast
+wheat_healthy
+wheat_septoria
+wheat_stripe_rust

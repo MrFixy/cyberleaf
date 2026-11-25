@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CYBERLEAF // Crop Pathology Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e9eef2; --panel:#f7fafc; --ink:#1b2a35; --dim:#6b7f8c; --line:#c5d2db;
+  --blue:#1aa7ec; --blue-d:#0b6fa8; --glow:rgba(26,167,236,.35);
+  --ok:#2bd4a0; --warn:#f2b441; --bad:#ff4d5e;
+  --sans:'Rajdhani','Segoe UI',system-ui,sans-serif; --mono:'Share Tech Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);overflow-x:hidden;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:48px 48px;background-position:-1px -1px;
+  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at 50% 0%,transparent 0,var(--bg) 75%);pointer-events:none}
+.wrap{position:relative;max-width:1180px;margin:0 auto;padding:20px 18px 60px}
+/* header */
+header{display:flex;align-items:center;gap:16px;padding:6px 0 18px;border-bottom:1px solid var(--line)}
+.tri{width:34px;height:34px;flex:none;position:relative}
+.tri svg{width:100%;height:100%;filter:drop-shadow(0 0 6px var(--glow))}
+.tri.busy svg path{animation:pulse .9s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+h1{font-weight:700;letter-spacing:.32em;font-size:1.35rem}
+h1 small{display:block;font:400 .72rem var(--mono);letter-spacing:.2em;color:var(--dim);margin-top:2px}
+.sys{margin-left:auto;font:400 .72rem var(--mono);color:var(--dim);text-align:right;letter-spacing:.1em;line-height:1.5}
+.sys b{color:var(--ok);font-weight:400}
+/* layout */
+main{display:grid;grid-template-columns:1.05fr .95fr;gap:22px;margin-top:22px}
+@media(max-width:860px){main{grid-template-columns:1fr}.sys{display:none}}
+.panel{background:var(--panel);border:1px solid var(--line);position:relative;
+  clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,22px 100%,0 calc(100% - 22px));
+  box-shadow:0 8px 30px rgba(20,50,70,.08)}
+.panel::after{content:"";position:absolute;top:0;left:0;width:3px;height:46px;background:var(--blue);box-shadow:0 0 10px var(--glow)}
+.ptitle{font:500 .72rem var(--mono);letter-spacing:.25em;color:var(--blue-d);padding:14px 20px 0 22px;display:flex;justify-content:space-between}
+.pbody{padding:12px 22px 22px}
+/* viewport */
+.view{position:relative;aspect-ratio:1/1;background:#dbe5ec;overflow:hidden;
+  clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));cursor:pointer}
+.view canvas,.view video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.view video{display:none}
+.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--dim);font:400 .8rem var(--mono);letter-spacing:.15em;text-align:center;padding:20px}
+.empty svg{width:64px;opacity:.7}
+.view.drag{outline:2px dashed var(--blue);outline-offset:-10px;background:#cfe6f3}
+.corner{position:absolute;width:26px;height:26px;border:2px solid var(--blue);pointer-events:none;filter:drop-shadow(0 0 4px var(--glow))}
+.c1{top:10px;left:10px;border-right:0;border-bottom:0}.c2{top:10px;right:10px;border-left:0;border-bottom:0}
+.c3{bottom:10px;left:10px;border-right:0;border-top:0}.c4{bottom:10px;right:10px;border-left:0;border-top:0}
+.scan{position:absolute;left:0;right:0;height:70px;top:-70px;pointer-events:none;display:none;
+  background:linear-gradient(180deg,transparent,rgba(26,167,236,.45));border-bottom:2px solid var(--blue);box-shadow:0 6px 20px var(--glow)}
+.view.scanning .scan{display:block;animation:sweep 1.4s linear infinite}
+@keyframes sweep{to{top:100%}}
+.hud{position:absolute;left:14px;bottom:14px;font:400 .68rem var(--mono);color:var(--blue-d);letter-spacing:.12em;pointer-events:none;text-shadow:0 0 6px #fff}
+/* buttons */
+.btns{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}
+.btn{--c:var(--blue);font:600 .92rem var(--sans);letter-spacing:.22em;text-transform:uppercase;color:var(--blue-d);
+  background:transparent;border:0;cursor:pointer;position:relative;padding:13px 26px 13px 34px;
+  clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px);
+  background:linear-gradient(#fff,#fff) padding-box;box-shadow:inset 0 0 0 1px var(--c);transition:.18s}
+.btn::before{content:"";position:absolute;left:12px;top:50%;width:0;height:0;transform:translateY(-50%);
+  border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid var(--c);filter:drop-shadow(0 0 4px var(--glow))}
+.btn:hover:not(:disabled){background:var(--c);color:#fff;box-shadow:0 0 18px var(--glow)}
+.btn:hover:not(:disabled)::before{border-bottom-color:#fff}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.primary{background:var(--blue);color:#fff;flex:1;min-width:160px;text-align:center}
+.btn.primary::before{border-bottom-color:#fff}
+.btn.primary:hover:not(:disabled){background:var(--blue-d);--c:var(--blue-d)}
+.btn.ghost{--c:var(--dim);color:var(--dim)}
+input[type=file]{display:none}
+/* results */
+.verdict{min-height:128px}
+.state{font:400 .72rem var(--mono);letter-spacing:.2em;color:var(--dim)}
+.crop{font:500 .85rem var(--mono);letter-spacing:.3em;color:var(--blue-d);margin-top:10px;text-transform:uppercase}
+.name{font-size:2.15rem;font-weight:700;line-height:1.05;letter-spacing:.04em;text-transform:uppercase;margin:2px 0 8px}
+.conf{display:flex;align-items:center;gap:14px}
+.ring{width:84px;height:84px;flex:none}
+.ring circle{fill:none;stroke-width:7}
+.ring .bg{stroke:var(--line)}.ring .fg{stroke:var(--blue);stroke-linecap:butt;transition:stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1),stroke .3s;filter:drop-shadow(0 0 4px var(--glow))}
+.ring text{font:700 20px var(--sans);fill:var(--ink)}
+.tag{display:inline-block;font:500 .68rem var(--mono);letter-spacing:.15em;padding:3px 10px;margin:0 6px 6px 0;border:1px solid currentColor;
+  clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)}
+.t-ok{color:#14a37a}.t-warn{color:#b8800f}.t-bad{color:#d6283b}
+.note{font-size:1.02rem;line-height:1.35;color:#31434f;margin-top:10px;font-weight:500}
+.sect{font:500 .7rem var(--mono);letter-spacing:.25em;color:var(--dim);margin:20px 0 8px;display:flex;align-items:center;gap:10px}
+.sect::after{content:"";flex:1;height:1px;background:var(--line)}
+.bar{display:grid;grid-template-columns:150px 1fr 52px;gap:10px;align-items:center;margin:5px 0;font:500 .8rem var(--mono);letter-spacing:.05em}
+.bar .track{height:8px;background:#dce6ec;position:relative;clip-path:polygon(0 0,100% 0,calc(100% - 4px) 100%,0 100%)}
+.bar .fill{position:absolute;inset:0 auto 0 0;width:0;background:#8fb4c8;transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.bar.top .fill{background:var(--blue);box-shadow:0 0 8px var(--glow)}
+.bar.top{color:var(--blue-d)}
+.bar span:last-child{text-align:right}
+.bar span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.log{font:400 .72rem/1.7 var(--mono);color:var(--dim);max-height:110px;overflow:auto}
+.log div::before{content:"> ";color:var(--blue)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}
+.stat{border:1px solid var(--line);padding:10px 12px;background:#fff}
+.stat b{display:block;font-size:1.5rem;font-weight:700;color:var(--blue-d)}
+.stat small{font:400 .62rem var(--mono);letter-spacing:.15em;color:var(--dim)}
+.err{color:var(--bad);font:500 .8rem var(--mono);margin-top:8px}
+footer{margin-top:34px;text-align:center;font:400 .68rem var(--mono);letter-spacing:.2em;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="tri" id="tri"><svg viewBox="0 0 40 40"><path d="M20 4 L37 34 H3 Z" fill="none" stroke="#1aa7ec" stroke-width="3" stroke-linejoin="round"/><path d="M20 15 L28 29 H12 Z" fill="#1aa7ec"/></svg></div>
+  <h1>CYBERLEAF<small>CROP PATHOLOGY ANALYSIS UNIT // RICE · CORN · WHEAT</small></h1>
+  <div class="sys">SYSTEM <b>● ONLINE</b><br><span id="clock">--:--:--</span></div>
+</header>
+
+<main>
+  <section class="panel">
+    <div class="ptitle"><span>// SPECIMEN INPUT</span><span id="fname">NO SPECIMEN</span></div>
+    <div class="pbody">
+      <div class="view" id="view">
+        <canvas id="cv" width="640" height="640"></canvas>
+        <video id="vid" playsinline muted></video>
+        <div class="empty" id="empty">
+          <svg viewBox="0 0 64 64" fill="none" stroke="#6b7f8c" stroke-width="2"><path d="M32 8 L58 54 H6 Z"/><path d="M32 24 V38 M32 44 V46"/></svg>
+          DROP LEAF IMAGE<br>OR CLICK TO LOAD
+        </div>
+        <div class="scan"></div>
+        <i class="corner c1"></i><i class="corner c2"></i><i class="corner c3"></i><i class="corner c4"></i>
+        <div class="hud" id="hud">STANDBY</div>
+      </div>
+      <div class="btns">
+        <button class="btn primary" id="analyze" disabled>Analyze</button>
+        <button class="btn" id="upload">Upload</button>
+        <button class="btn" id="cam">Camera</button>
+        <button class="btn ghost" id="reset">Reset</button>
+      </div>
+      <input type="file" id="file" accept="image/*">
+      <div class="err" id="err"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="ptitle"><span>// DIAGNOSTIC OUTPUT</span><span id="lat"></span></div>
+    <div class="pbody">
+      <div class="verdict" id="verdict">
+        <div class="state">AWAITING SPECIMEN…</div>
+        <div class="note" style="color:var(--dim)">Load a close-up photo of a single leaf. Fill the frame, keep it in focus, avoid heavy shadows.</div>
+      </div>
+      <div id="results" style="display:none">
+        <div class="sect">PROBABILITY MATRIX</div>
+        <div id="bars"></div>
+      </div>
+      <div class="sect">MODEL TELEMETRY</div>
+      <div class="stats">
+        <div class="stat"><b id="s-acc">–</b><small>TEST ACCURACY</small></div>
+        <div class="stat"><b id="s-f1">–</b><small>MACRO F1</small></div>
+        <div class="stat"><b id="s-n">–</b><small>CLASSES</small></div>
+      </div>
+      <div class="sect">EVENT LOG</div>
+      <div class="log" id="log"></div>
+    </div>
+  </section>
+</main>
+<footer>CYBERLEAF // ADVISORY ONLY — CONFIRM WITH AN AGRONOMIST BEFORE TREATMENT</footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'),ctx=cv.getContext('2d'),vid=$('vid');
+let blob=null,meta=null,stream=null,rafId=null;
+
+const KB={
+ corn_blight:["Northern leaf blight","Long cigar-shaped grey-tan lesions. Rotate crops, use resistant hybrids, consider a foliar fungicide if it reaches upper leaves early."],
+ corn_common_rust:["Common rust","Small brick-red pustules on both leaf surfaces. Usually mild; resistant hybrids help, fungicide only for severe early infection."],
+ corn_gray_leaf_spot:["Gray leaf spot","Rectangular grey lesions bounded by veins. Favoured by humid, residue-heavy fields: till residue, rotate, use tolerant hybrids."],
+ corn_healthy:["Healthy","No disease signature detected. Keep routine scouting."],
+ rice_brownspot:["Brown spot","Oval brown spots with yellow halos, linked to nutrient stress. Balance fertility (K, Si), use clean seed."],
+ rice_healthy:["Healthy","No disease signature detected. Keep routine scouting."],
+ rice_hispa:["Rice hispa","Insect damage: white parallel scraping streaks from beetle larvae and adults. Clip leaf tips before transplanting, control weeds, insecticide at threshold."],
+ rice_leafblast:["Leaf blast","Diamond-shaped lesions with grey centres. Avoid excess nitrogen, use resistant varieties, treat early with a recommended fungicide."],
+ wheat_healthy:["Healthy","No disease signature detected. Keep routine scouting."],
+ wheat_septoria:["Septoria leaf blotch","Irregular tan blotches with tiny black fruiting bodies. Rotate, manage residue, fungicide at flag-leaf stage if pressure is high."],
+ wheat_stripe_rust:["Stripe rust","Yellow-orange pustule stripes along veins. Spreads fast in cool, wet weather: scout often, resistant varieties, prompt fungicide."]
+};
+const pretty=l=>l.replace(/_/g,' ').toUpperCase();
+const crop=l=>l.split('_')[0].toUpperCase();
+
+function log(t){const d=document.createElement('div');d.textContent=t;$('log').prepend(d)}
+setInterval(()=>$('clock').textContent=new Date().toLocaleTimeString([], {hour12:false}),1000);
+
+fetch('/api/meta').then(r=>r.json()).then(m=>{
+  meta=m;$('s-acc').textContent=(m.accuracy*100).toFixed(1)+'%';$('s-f1').textContent=m.macro_f1.toFixed(2);$('s-n').textContent=m.labels.length;
+  log('MODEL LOADED // '+m.labels.length+' CLASSES');
+}).catch(()=>{$('err').textContent='BACKEND OFFLINE';});
+
+function drawImage(src){
+  const s=Math.min(src.width||src.videoWidth,src.height||src.videoHeight);
+  const w=src.width||src.videoWidth,h=src.height||src.videoHeight;
+  ctx.drawImage(src,(w-s)/2,(h-s)/2,s,s,0,0,640,640);
+}
+function loadFile(f){
+  if(!f||!f.type.startsWith('image/'))return;
+  stopCam();blob=f;$('fname').textContent=f.name.slice(0,26).toUpperCase();
+  const img=new Image();
+  img.onload=()=>{drawImage(img);$('empty').style.display='none';$('analyze').disabled=false;$('hud').textContent='SPECIMEN LOADED';log('SPECIMEN LOADED // '+f.name);URL.revokeObjectURL(img.src)};
+  img.src=URL.createObjectURL(f);
+}
+$('upload').onclick=$('view').onclick=()=>{if(!stream)$('file').click()};
+$('file').onchange=e=>loadFile(e.target.files[0]);
+['dragover','dragenter'].forEach(ev=>$('view').addEventListener(ev,e=>{e.preventDefault();$('view').classList.add('drag')}));
+['dragleave','drop'].forEach(ev=>$('view').addEventListener(ev,e=>{e.preventDefault();$('view').classList.remove('drag')}));
+$('view').addEventListener('drop',e=>loadFile(e.dataTransfer.files[0]));
+
+async function startCam(){
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    vid.srcObject=stream;await vid.play();vid.style.display='block';cv.style.display='none';$('empty').style.display='none';
+    $('cam').textContent='Capture';$('hud').textContent='LIVE FEED';log('OPTICAL SENSOR ACTIVE');
+  }catch(e){$('err').textContent='CAMERA ACCESS DENIED';stream=null}
+}
+function stopCam(){
+  if(!stream)return;stream.getTracks().forEach(t=>t.stop());stream=null;vid.style.display='none';cv.style.display='block';$('cam').textContent='Camera';
+}
+$('cam').onclick=()=>{
+  $('err').textContent='';
+  if(!stream)return startCam();
+  drawImage(vid);stopCam();
+  cv.toBlob(b=>{blob=b;$('fname').textContent='CAPTURE';$('analyze').disabled=false;$('hud').textContent='FRAME CAPTURED';log('FRAME CAPTURED')},'image/jpeg',.92);
+};
+
+$('reset').onclick=()=>{
+  stopCam();blob=null;ctx.clearRect(0,0,640,640);$('empty').style.display='flex';$('analyze').disabled=true;$('fname').textContent='NO SPECIMEN';
+  $('hud').textContent='STANDBY';$('err').textContent='';$('results').style.display='none';$('lat').textContent='';
+  $('verdict').innerHTML='<div class="state">AWAITING SPECIMEN…</div><div class="note" style="color:var(--dim)">Load a close-up photo of a single leaf. Fill the frame, keep it in focus, avoid heavy shadows.</div>';
+};
+
+$('analyze').onclick=async()=>{
+  if(!blob)return;$('err').textContent='';
+  $('view').classList.add('scanning');$('tri').classList.add('busy');$('analyze').disabled=true;
+  $('hud').textContent='ANALYZING…';$('verdict').innerHTML='<div class="state">PROCESSING // NEURAL SCAN IN PROGRESS</div>';
+  const t0=performance.now();
+  try{
+    const fd=new FormData();fd.append('file',blob,'leaf.jpg');
+    const [r]=await Promise.all([fetch('/api/predict',{method:'POST',body:fd}),new Promise(r=>setTimeout(r,1300))]);
+    if(!r.ok)throw new Error((await r.json()).detail||'ERROR');
+    const d=await r.json();render(d.top,Math.round(performance.now()-t0));
+  }catch(e){$('err').textContent='ANALYSIS FAILED // '+e.message;$('verdict').innerHTML='<div class="state">ERROR</div>'}
+  $('view').classList.remove('scanning');$('tri').classList.remove('busy');$('analyze').disabled=false;
+};
+
+function render(top,ms){
+  const t=top[0],pct=t.prob*100,[nm,adv]=KB[t.label]||[pretty(t.label),''];
+  const rel=meta?.classes?.find(c=>c.label===t.label);
+  const healthy=t.label.endsWith('healthy');
+  let tags='';
+  if(pct>=80)tags+='<span class="tag t-ok">HIGH CONFIDENCE</span>';
+  else if(pct>=55)tags+='<span class="tag t-warn">MODERATE CONFIDENCE</span>';
+  else tags+='<span class="tag t-bad">LOW CONFIDENCE</span>';
+  if(rel){const f=rel.f1;tags+=`<span class="tag ${f>=.85?'t-ok':f>=.6?'t-warn':'t-bad'}">CLASS RELIABILITY F1 ${f.toFixed(2)}</span>`}
+  tags+=`<span class="tag ${healthy?'t-ok':'t-bad'}">${healthy?'NO THREAT':'THREAT DETECTED'}</span>`;
+  const C=2*Math.PI*35;
+  $('verdict').innerHTML=`
+    <div class="state">ANALYSIS COMPLETE</div>
+    <div class="crop">${crop(t.label)}</div>
+    <div class="name">${nm}</div>
+    <div class="conf">
+      <svg class="ring" viewBox="0 0 84 84"><circle class="bg" cx="42" cy="42" r="35"/>
+        <circle class="fg" id="fg" cx="42" cy="42" r="35" transform="rotate(-90 42 42)" stroke-dasharray="${C}" stroke-dashoffset="${C}"/>
+        <text x="42" y="49" text-anchor="middle">${pct.toFixed(0)}%</text></svg>
+      <div>${tags}</div>
+    </div>
+    <div class="note">${adv}</div>
+    ${rel&&rel.f1<.6?'<div class="note t-bad" style="font-size:.9rem">Model is weak on this class — treat as a hint and verify the leaf manually.</div>':''}
+    ${top[1]&&top[0].prob-top[1].prob<.2?`<div class="note t-warn" style="font-size:.9rem">Close call with ${pretty(top[1].label)} (${(top[1].prob*100).toFixed(0)}%).</div>`:''}`;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>$('fg').style.strokeDashoffset=C*(1-t.prob)));
+  $('bars').innerHTML=top.map((x,i)=>`<div class="bar ${i?'':'top'}"><span>${pretty(x.label)}</span><div class="track"><div class="fill" data-w="${x.prob*100}"></div></div><span>${(x.prob*100).toFixed(1)}%</span></div>`).join('');
+  $('results').style.display='block';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>document.querySelectorAll('.fill').forEach(f=>f.style.width=f.dataset.w+'%')));
+  $('hud').textContent=pretty(t.label)+' // '+pct.toFixed(1)+'%';$('lat').textContent=ms+' MS';
+  log('RESULT // '+t.label+' '+pct.toFixed(1)+'%');
+}
+</script>
+</body>
+</html>

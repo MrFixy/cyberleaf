@@ -1,0 +1,83 @@
+{
+ "classes": [
+  {
+   "label": "corn_blight",
+   "precision": 0.909,
+   "recall": 0.872,
+   "f1": 0.89,
+   "support": 172
+  },
+  {
+   "label": "corn_common_rust",
+   "precision": 0.97,
+   "recall": 0.98,
+   "f1": 0.975,
+   "support": 196
+  },
+  {
+   "label": "corn_gray_leaf_spot",
+   "precision": 0.822,
+   "recall": 0.86,
+   "f1": 0.841,
+   "support": 86
+  },
+  {
+   "label": "corn_healthy",
+   "precision": 0.994,
+   "recall": 1.0,
+   "f1": 0.997,
+   "support": 175
+  },
+  {
+   "label": "rice_brownspot",
+   "precision": 0.588,
+   "recall": 0.513,
+   "f1": 0.548,
+   "support": 78
+  },
+  {
+   "label": "rice_healthy",
+   "precision": 0.676,
+   "recall": 0.549,
+   "f1": 0.606,
+   "support": 224
+  },
+  {
+   "label": "rice_hispa",
+   "precision": 0.275,
+   "recall": 0.294,
+   "f1": 0.284,
+   "support": 85
+  },
+  {
+   "label": "rice_leafblast",
+   "precision": 0.38,
+   "recall": 0.53,
+   "f1": 0.443,
+   "support": 117
+  },
+  {
+   "label": "wheat_healthy",
+   "precision": 0.875,
+   "recall": 0.933,
+   "f1": 0.903,
+   "support": 15
+  },
+  {
+   "label": "wheat_septoria",
+   "precision": 1.0,
+   "recall": 1.0,
+   "f1": 1.0,
+   "support": 14
+  },
+  {
+   "label": "wheat_stripe_rust",
+   "precision": 0.967,
+   "recall": 0.935,
+   "f1": 0.951,
+   "support": 31
+  }
+ ],
+ "accuracy": 0.7527,
+ "macro_f1": 0.767
+}
